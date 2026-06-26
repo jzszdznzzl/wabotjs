@@ -2,6 +2,5 @@ node_modules/
 dist/
 session/
 
-package.json
 pnpm-lock.yaml
 pnpm-workspace.yaml
