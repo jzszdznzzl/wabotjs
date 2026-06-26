@@ -1,96 +1,109 @@
-# WABotJS
+<div align='center'>
 
-A WhatsApp bot library built on `baileys` and TypeScript, with local cache support, automatic reconnection, and credential storage using SQLite.
+# ⚡ WABotJS ⚡
 
-## Requirements
+A WhatsApp bot library built on [baileys](https://github.com/whiskeysockets/baileys) and TypeScript
+
+</div>
+
+## 📋 Requirements
 
 - Node.js >= 24
 - `npm`, `pnpm`, or `yarn`
 
 > [!IMPORTANT]
-> You must have Node.js version v24 or higher; otherwise, you will not be able to use this library. This library requires the native module `node:sqlite` to function.
+> You must have Node.js version v24 or higher; otherwise, you will not be able to use this library. This library requires the native module `node:sqlite` to function
 
-## Installation
+## 🚀 Installation
 
 ```bash
-npm install @jzszdznzzl/wabotjs
+npm install @jzszdznzzl/wabotjs -E
+
 # or
-pnpm install @jzszdznzzl/wabotjs
+pnpm install @jzszdznzzl/wabotjs -E
+
 # or
-yarn install @jzszdznzzl/wabotjs
+yarn install @jzszdznzzl/wabotjs -E
 ```
 
-## Basic Usage
-
-You can see a better example in the [Src/index.test.ts](Src/index.test.ts) file.
+## 💡 Basic Usage
 
 ```ts
-import path from 'node:path';
-import { Bot } from '@jzszdznzzl/wabotjs';
-// Optional
-// import qrcode from 'qrcode';
+import { Bot, Auth, Events, jidDecode } from '@jzszdznzzl/wabotjs';
+import { join } from 'node:path';
+import { toString } from 'qrcode';
 
-const id = '26x8bmn7';
-const datadir = path.join(process.cwd(), 'Data', id);
-const bot = new Bot(id, datadir);
-bot
-  .onError(async (err) => {
-    console.log('[Bot error]');
-    console.error(err);
+const id = 'my-bot';
+const auth = new Auth(join(process.cwd(), 'sessions', id));
+const bot = new Bot(id, auth)
+  .on(Events.CLOSE, (out) => {
+    console.warn('Bot connection closed');
+    console.dir(out, { depth: null });
   })
-  .onQR(async (qr) => {
-    console.log('[Bot qr]');
-    // console.log(await qrcode.toString(qr,{ type: 'terminal', small: true }));
+  .on(Events.OPEN, (user) => {
+    console.log(`Bot connection open in ${user.name}(${jidDecode(user.pn)!.user})`);
+  })
+  .on(Events.QR, async (str) => {
+    const qr = await toString(str, { type: 'terminal', small: true });
+    console.log('QR code');
     console.log(qr);
   })
-  .onOTP(async (code) => {
-    console.log('[Bot otp]');
+  .on(Events.OTP, (code) => {
+    console.log('Pairing code');
     console.log(code);
   })
-  .onOpen(async (user) => {
-    console.log('[Bot open]');
-    console.dir(user);
-  })
-  .onClose(async (err) => {
-    console.log('[Bot close]');
-    console.error(err);
-  })
-  .onMessage(async (message) => {
-    console.log('[Bot message]');
-    console.dir(message, { depth: null });
-  })
-  .onCommand(async (message, prefix, name, args) => {
-    if (name === 'ping') {
-      await message.reply({ text: 'Pong!' });
+  .setPrefix('!')
+  .on(Events.COMMAND, async (msg, name, args) => {
+    try {
+      if (['ping', 'p'].includes(name)) {
+        await msg.reply({ text: '¡Pong!' });
+        return;
+      }
+      if (['echo', 'say'].includes(name)) {
+        await msg.reply({ text: args.length > 0 ? args.join(' ') : '¡Hello, World!' });
+        return;
+      }
+      await msg.reply({ text: `The ${bot.prefix + name} command does not exist` });
+    } catch (e) {
+      console.warn(`Error executing the ${bot.prefix + name} command`);
+      console.error(e);
     }
+  })
+  .on(Events.ERROR, (err) => {
+    console.warn('An error occurred');
+    console.error(err);
   });
-// To log in using a QR code, call the .login() function without parameters.
 await bot.login();
-// To log in using an 8-digit pairing code, call .login() passing a phone number as parameter.
-// await bot.login('+5959xxxxxxxx');
 ```
 
-## Architecture
+## 🔌 API's
 
-It's advisable to take a look at the internal code to better understand how it works.
+### - Auth -> Look [Auth.ts](src/Auth.ts)
+
+### - Bot -> Look [Bot.ts](src/Bot.ts)
+
+### - Message -> Look [Message.ts](src/Message.ts)
+
+### - Socket -> Look [Socket.ts](src/Socket.ts)
+
+## 🏗️ Architecture
+
+It's advisable to take a look at the internal code to better understand how it works
 
 ```text
-Src/
-├── Cache/
-│    ├── index.ts
-│    ├── JID.ts
-│    └── Message.ts
-├── Utils/
+src/
+├── utils/
 │    ├── asserts.ts
 │    ├── converters.ts
 │    ├── generics.ts
 │    ├── index.ts
 │    ├── LRUCache.ts
-│    ├── SQLiteCache.ts
-│    └── TTLCache.ts
+│    ├── SQLiteStore.ts
+│    ├── TTLCache.ts
+│    └── UserCache.ts
 ├── Auth.ts
 ├── Bot.ts
-├── index.test.ts
+├── index.ts
 ├── Message.ts
 └── Socket.ts
 ```
@@ -100,6 +113,10 @@ Src/
 >
 > This software is provided "as is" without warranty of any kind. WABotJS is an independent tool and holds no affiliation with WhatsApp. Meta Platforms, Inc. reserves the right to ban accounts utilizing unauthorized third-party clients. The creator [jzszdznzzl](https://github.com/jzszdznzzl) shall not be held liable for any account restrictions, bans, or repercussions stemming from the use of this library. Use at your own risk.
 
-## License
+<div align='center'>
+
+## 📄 License
 
 [MIT License](LICENSE)
+
+</div>
